@@ -1,4 +1,4 @@
-package middlewares
+package helper
 
 import (
 	"os"

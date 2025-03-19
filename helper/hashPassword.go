@@ -1,4 +1,4 @@
-package middlewares
+package helper
 
 import (
 	"os"
@@ -8,14 +8,14 @@ import (
 )
 
 // HashPassword mengenkripsi password menggunakan bcrypt
-func HashPassword(password string) (string, error) {
+func HashPassword(password string) (string, Error) {
 	salt, err := strconv.Atoi(os.Getenv("BCRYPT_SALT"))
 	if err != nil {
 		salt = 10 // Default ke 10 jika gagal membaca ENV
 	}
 	hashed, err := bcrypt.GenerateFromPassword([]byte(password), salt)
 	if err != nil {
-		return "", err
+		return "", NewInternalServerError("failed to hash password")
 	}
 	return string(hashed), nil
 }

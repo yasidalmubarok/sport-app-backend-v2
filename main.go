@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"sport-app-backend/config"
+	"sport-app-backend/repositories"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +24,8 @@ func main() {
 		}
 		c.Next()
 	})
+
+	userOwnerRepository := repositories.NewUserOwnerRepository(db)
 
 	// Tambahkan router di sini...
 
