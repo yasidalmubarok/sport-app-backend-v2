@@ -9,7 +9,7 @@ import (
 )
 
 type UserOwnerService interface {
-	CreateUserOwner(ctx context.Context, userOwner *models.RegisterUserOwnerRequest) (*models.UserOwner, helper.Error)
+	CreateUserOwner(ctx context.Context, userOwner *models.RegisterUserOwnerRequest) (*models.RegisterOwnerResponse, helper.Error)
 }
 
 type userOwnerService struct {
@@ -26,6 +26,18 @@ func (uos *userOwnerService) CreateUserOwner(ctx context.Context, userOwnerPayLo
 		return nil, err
 	}
 
+	if err := helper.ValidateUsername(userOwnerPayLoad.Username); err != nil {
+		return nil, err
+	}
+
+	if err := helper.ValidateEmail(userOwnerPayLoad.Email); err != nil {
+		return nil, err
+	}
+
+	if err := helper.ValidatePhoneNumber(userOwnerPayLoad.PhoneNumber); err != nil {
+		return nil, err
+	}
+
 	hashedPassword, err := helper.HashPassword(userOwnerPayLoad.Password)
 	if err != nil {
 		return nil, helper.NewInternalServerError(err.Error())
@@ -34,13 +46,20 @@ func (uos *userOwnerService) CreateUserOwner(ctx context.Context, userOwnerPayLo
 	userOwner := userOwnerPayLoad.NewUserOwner()
 	userOwner.Password = hashedPassword
 
-	u, _ := uos.userOwnerRepository.GetUserOwnerByUsername(ctx, userOwner.Username)
-	if &u.Username == &userOwnerPayLoad.Username {
+	// Periksa apakah username sudah ada
+	existingUser, _ := uos.userOwnerRepository.IsUsernameExists(ctx, userOwner.Username)
+	if existingUser {
 		return nil, helper.NewConflictError("username already exists")
 	}
 
-	p, _ := uos.userOwnerRepository.GetUserOwnerByPhoneNumber(ctx, userOwner.PhoneNumber)
-	if &p.PhoneNumber == &userOwnerPayLoad.PhoneNumber {
+	existingEmail, _ := uos.userOwnerRepository.IsEmailExists(ctx, userOwner.Email)
+	if existingEmail {
+		return nil, helper.NewConflictError("email already exists")
+	}
+
+	// Periksa apakah nomor telepon sudah ada
+	existingPhone, _ := uos.userOwnerRepository.IsPhoneNumberExists(ctx, userOwner.PhoneNumber)
+	if existingPhone {
 		return nil, helper.NewConflictError("phone number already exists")
 	}
 
@@ -57,6 +76,7 @@ func (uos *userOwnerService) mapRegisterOwnerResponse(userOwner *models.UserOwne
 		ID:          userOwner.ID,
 		Name:        userOwner.Name,
 		Username:    userOwner.Username,
+		Email:       userOwner.Email,
 		PhoneNumber: userOwner.PhoneNumber,
 		Role:        userOwner.Role,
 		CreatedAt:   userOwner.CreatedAt.Format(time.RFC3339),

@@ -5,13 +5,21 @@ import (
 	"log"
 	"os"
 	"sport-app-backend/config"
+	"sport-app-backend/handlers"
 	"sport-app-backend/repositories"
+	"sport-app-backend/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	db := config.ConnectDB()
+
+	userOwnerRepository := repositories.NewUserOwnerRepository(db)
+	userOwnerService := services.NewUserOwnerService(userOwnerRepository)
+	userOwnerHandler := handlers.NewUserOwnerHandler(userOwnerService)
+
+	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
 
 	router.Use(func(c *gin.Context) {
@@ -25,9 +33,10 @@ func main() {
 		c.Next()
 	})
 
-	userOwnerRepository := repositories.NewUserOwnerRepository(db)
+	api := router.Group("/api/v1")
 
-	// Tambahkan router di sini...
+	userOwner := api.Group("/owner")
+	userOwner.POST("/register", userOwnerHandler.CreateUserOwner)
 
 	port := os.Getenv("PORT")
 	if port == "" {
