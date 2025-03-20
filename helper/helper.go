@@ -65,18 +65,26 @@ func FormatValidationError(err error) []string {
 	return errorsList
 }
 
-func ValidatePhoneNumber(phone string) error {
+func ValidatePhoneNumber(phone string) Error {
 	re := regexp.MustCompile(`^(08|628)[0-9]{8,11}$`)
 	if !re.MatchString(phone) {
-		return errors.New("invalid phone number")
+		return NewBadRequestError("invalid phone number")
 	}
 	return nil
 }
 
-func ValidateEmail(email string) error {
+func ValidateEmail(email string) Error {
 	re := regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	if !re.MatchString(email) {
-		return errors.New("invalid email address")
+		return NewBadRequestError("invalid email")
+	}
+	return nil
+}
+
+func ValidateUsername(username string) Error {
+	re := regexp.MustCompile(`^[a-zA-Z0-9_]{8,18}$`)
+	if !re.MatchString(username) {
+		return NewBadRequestError("invalid username")
 	}
 	return nil
 }
