@@ -41,7 +41,7 @@ func (uos *userOwnerService) CreateUserOwner(ctx context.Context, userOwnerPayLo
 
 	hashedPassword, err := helper.HashPassword(userOwnerPayLoad.Password)
 	if err != nil {
-		return nil, helper.NewInternalServerError(err.Error())
+		return nil, err
 	}
 
 	userOwner := userOwnerPayLoad.NewUserOwner()
@@ -66,7 +66,7 @@ func (uos *userOwnerService) CreateUserOwner(ctx context.Context, userOwnerPayLo
 
 	newUserOwner, err := uos.userOwnerRepository.CreateUserOwner(ctx, &userOwner)
 	if err != nil {
-		return nil, helper.NewInternalServerError(err.Error())
+		return nil, err
 	}
 
 	return uos.mapRegisterOwnerResponse(newUserOwner), nil
@@ -93,7 +93,7 @@ func (uos *userOwnerService) LoginUserOwner(ctx context.Context, userOwnerPayLoa
 
 	token, err := helper.GenerateJWT(owner.ID, owner.Name, owner.Username, owner.PhoneNumber, owner.Role)
 	if err != nil {
-		return nil, helper.NewInternalServerError(err.Error())
+		return nil, helper.NewInternalServerError("failed to generate token")
 	}
 
 	return uos.mapLoginOwnerWithTokenResponse(owner, token), nil
