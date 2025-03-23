@@ -39,3 +39,26 @@ func (uoh *userOwnerHandler) CreateUserOwner(ctx *gin.Context) {
 	formattedResponse := helper.APIResponse("User owner created successfully", http.StatusCreated, "success", userOwner)
 	ctx.JSON(http.StatusCreated, formattedResponse)
 }
+
+func (uoh *userOwnerHandler) LoginUserOwner(ctx *gin.Context) {
+	userOwnerPayLoad := &models.LoginUserOwnerRequest{}
+
+	if err := ctx.ShouldBindJSON(userOwnerPayLoad); err != nil {
+		errors := helper.FormatValidationError(err)
+
+		errBindJson := helper.NewUnprocessableEntityError(errors[0])
+		response := helper.APIResponse(errBindJson.Message(), errBindJson.Status(), "error", nil)
+		ctx.JSON(errBindJson.Status(), response)
+		return
+	}
+
+	userOwner, err := uoh.userOwnerService.LoginUserOwner(ctx, userOwnerPayLoad)
+	if err != nil {
+		response := helper.APIResponse(err.Message(), err.Status(), "error", nil)
+		ctx.JSON(err.Status(), response)
+		return
+	}
+
+	formattedResponse := helper.APIResponse("User owner logged in successfully", http.StatusOK, "success", userOwner)
+	ctx.JSON(http.StatusOK, formattedResponse)
+}

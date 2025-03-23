@@ -1,50 +1,80 @@
 package helper
 
 import (
-	"os"
+	"fmt"
 	"time"
+
+	"os"
 
 	"github.com/golang-jwt/jwt/v5"
 )
 
+// JWTClaims menyimpan data dalam token
 type JWTClaims struct {
-	ID       string `json:"id"`
-	Name     string `json:"name"`
-	Username string `json:"username"`
-	Role     string `json:"role"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Username    string `json:"username"`
+	NumberPhone string `json:"numberPhone"`
+	Role        string `json:"role"`
+	IssuedAt    int64  `json:"issued_at"`
+	ExpiresAt   int64  `json:"expires_at"`
 	jwt.RegisteredClaims
 }
 
-// GenerateToken membuat token JWT dengan klaim yang diberikan
-func GenerateToken(id, name, username, role string) (string, error) {
-	claims := JWTClaims{
-		ID:       id,
-		Name:     name,
-		Username: username,
-		Role:     role,
-		RegisteredClaims: jwt.RegisteredClaims{
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 24)), // Berlaku 24 jam
-		},
+// GenerateJWT membuat token dengan data user dan masa berlaku 24 jam
+func GenerateJWT(id, name, username, numberPhone, role string) (string, Error) {
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		return "", NewInternalServerError("jwt secret not found in environment")
 	}
 
+	expirationTime := time.Now().Add(24 * time.Hour).Unix()
+	issueTime := time.Now().Unix()
+
+	claims := JWTClaims{
+		ID:          id,
+		Name:        name,
+		Username:    username,
+		NumberPhone: numberPhone,
+		Role:        role,
+		IssuedAt:    issueTime,
+		ExpiresAt:   expirationTime,
+	}
+
+	// Buat token dengan algoritma HS256
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(os.Getenv("JWT_SECRET")))
+
+	// Tandatangani token dengan secret key
+	tokenString, err := token.SignedString([]byte(secretKey))
+	if err != nil {
+		return "", NewInternalServerError("failed to sign token")
+	}
+
+	return tokenString, nil
 }
 
-// ParseToken memverifikasi dan mengurai token JWT
-func ParseToken(tokenString string) (*JWTClaims, error) {
+// ParseJWT memvalidasi token dan mengembalikan data user
+func ParseJWT(tokenString string) (*JWTClaims, Error) {
+	secretKey := os.Getenv("JWT_SECRET")
+	if secretKey == "" {
+		return nil, NewInternalServerError("jwt secret not found in environment")
+	}
+
+	// Parse token
 	token, err := jwt.ParseWithClaims(tokenString, &JWTClaims{}, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte(secretKey), nil
 	})
 
 	if err != nil {
-		return nil, err
+		return nil, NewUnauthenticatedError("Invalid token")
 	}
 
 	claims, ok := token.Claims.(*JWTClaims)
 	if !ok || !token.Valid {
-		return nil, err
+		return nil, NewUnauthenticatedError("Invalid token")
 	}
 
 	return claims, nil

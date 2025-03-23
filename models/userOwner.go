@@ -31,8 +31,8 @@ type RegisterUserOwnerRequest struct {
 }
 
 type LoginUserOwnerRequest struct {
-	Username string `json:"username" binding:"required,gte=3,lte=30"`
-	Password string `json:"password" binding:"required,gte=6,lte=30"`
+	Identifier string `json:"identifier" binding:"required"`
+	Password   string `json:"password" binding:"required"`
 }
 
 type RegisterOwnerResponse struct {
@@ -47,6 +47,8 @@ type RegisterOwnerResponse struct {
 }
 
 type LoginOwnerResponse struct {
+	Username string `json:"username"`
+	PhoneNumber string `json:"phone_number"`
 	Token string `json:"token"`
 }
 

@@ -37,6 +37,7 @@ func main() {
 
 	userOwner := api.Group("/owner")
 	userOwner.POST("/register", userOwnerHandler.CreateUserOwner)
+	userOwner.POST("/session", userOwnerHandler.LoginUserOwner)
 
 	port := os.Getenv("PORT")
 	if port == "" {
