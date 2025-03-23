@@ -6,6 +6,7 @@ import (
 	"os"
 	"sport-app-backend/config"
 	"sport-app-backend/handlers"
+	"sport-app-backend/middlewares"
 	"sport-app-backend/repositories"
 	"sport-app-backend/services"
 
@@ -15,9 +16,12 @@ import (
 func main() {
 	db := config.ConnectDB()
 
+	// Dependency Injection
 	userOwnerRepository := repositories.NewUserOwnerRepository(db)
 	userOwnerService := services.NewUserOwnerService(userOwnerRepository)
 	userOwnerHandler := handlers.NewUserOwnerHandler(userOwnerService)
+
+	_ = middlewares.NewAuthService(db, userOwnerRepository)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
