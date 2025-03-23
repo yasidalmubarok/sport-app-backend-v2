@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"context"
+	"errors"
 	"sport-app-backend/helper"
 	"sport-app-backend/models"
 
@@ -16,6 +17,7 @@ type UserOwnerRepository interface {
 	IsUsernameExists(ctx context.Context, username string) (bool, helper.Error)
 	IsPhoneNumberExists(ctx context.Context, phoneNumber string) (bool, helper.Error)
 	IsEmailExists(ctx context.Context, email string) (bool, helper.Error)
+	GetUserByUsernameOrPhone(ctx context.Context, identifier string) (*models.UserOwner, helper.Error)
 }
 
 type userOwnerRepository struct {
@@ -86,4 +88,31 @@ func (uor *userOwnerRepository) IsEmailExists(ctx context.Context, email string)
 		return false, helper.NewConflictError("email already exists")
 	}
 	return count > 0, nil
+}
+
+func (uor *userOwnerRepository) GetUserByUsernameOrPhone(ctx context.Context, identifier string) (*models.UserOwner, helper.Error) {
+	var user models.UserOwner
+	
+	// Coba cari berdasarkan username
+	err := uor.db.WithContext(ctx).
+		Where("username = ?", identifier).
+		First(&user).Error
+
+	if err == nil {
+		return &user, nil
+	}
+
+	// Jika tidak ditemukan, cari berdasarkan phone_number
+	err = uor.db.WithContext(ctx).
+		Where("phone_number = ?", identifier).
+		First(&user).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, helper.NewNotFoundError("user not found")
+		}
+		return nil, helper.NewInternalServerError(err.Error())
+	}
+
+	return &user, nil
 }

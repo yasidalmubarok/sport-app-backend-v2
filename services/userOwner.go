@@ -10,6 +10,7 @@ import (
 
 type UserOwnerService interface {
 	CreateUserOwner(ctx context.Context, userOwner *models.RegisterUserOwnerRequest) (*models.RegisterOwnerResponse, helper.Error)
+	LoginUserOwner(ctx context.Context, userOwner *models.LoginUserOwnerRequest) (*models.LoginOwnerResponse, helper.Error)
 }
 
 type userOwnerService struct {
@@ -69,6 +70,41 @@ func (uos *userOwnerService) CreateUserOwner(ctx context.Context, userOwnerPayLo
 	}
 
 	return uos.mapRegisterOwnerResponse(newUserOwner), nil
+}
+
+func (uos *userOwnerService) LoginUserOwner(ctx context.Context, userOwnerPayLoad *models.LoginUserOwnerRequest) (*models.LoginOwnerResponse, helper.Error) {
+	err := helper.ValidateStruct(userOwnerPayLoad)
+	if err != nil {
+		return nil, helper.NewBadRequestError(err.Error())
+	}
+
+	owner, err := uos.userOwnerRepository.GetUserByUsernameOrPhone(ctx, userOwnerPayLoad.Identifier)
+	if err != nil {
+		return nil, err
+	}
+
+	if owner == nil {
+		return nil, helper.NewNotFoundError("invalid username or phone number")
+	}
+
+	if !helper.ComparePassword(owner.Password, userOwnerPayLoad.Password) {
+		return nil, helper.NewUnauthenticatedError("incorrect password")
+	}
+
+	token, err := helper.GenerateJWT(owner.ID, owner.Name, owner.Username, owner.PhoneNumber, owner.Role)
+	if err != nil {
+		return nil, helper.NewInternalServerError(err.Error())
+	}
+
+	return uos.mapLoginOwnerWithTokenResponse(owner, token), nil
+}
+
+func (uos *userOwnerService) mapLoginOwnerWithTokenResponse(userOwner *models.UserOwner, token string) *models.LoginOwnerResponse {
+	return &models.LoginOwnerResponse{
+		Username: userOwner.Username,
+		PhoneNumber: userOwner.PhoneNumber,
+		Token: token,
+	}
 }
 
 func (uos *userOwnerService) mapRegisterOwnerResponse(userOwner *models.UserOwner) *models.RegisterOwnerResponse {
