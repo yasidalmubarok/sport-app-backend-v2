@@ -41,3 +41,117 @@ func AuthMiddleware() gin.HandlerFunc {
 		ctx.Next()
 	}
 }
+
+func AdminAuthorization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("missing authorization header"))
+			c.Abort()
+			return
+		}
+
+		// Format token: "Bearer <token>"
+		tokenParts := strings.Split(authHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("invalid token format"))
+			c.Abort()
+			return
+		}
+
+		// Parse token
+		claims, err := helper.ParseJWT(tokenParts[1])
+		if err != nil {
+			c.JSON(err.Status(), err)
+			c.Abort()
+			return
+		}
+
+		// Cek apakah role adalah "admin"
+		if claims.Role != "admin" {
+			c.JSON(http.StatusForbidden, helper.NewUnathorizedError("access denied"))
+			c.Abort()
+			return
+		}
+
+		// Simpan user di context untuk akses selanjutnya
+		c.Set("user", claims)
+		c.Next()
+	}
+}
+
+func OwnerAuthorization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("missing authorization header"))
+			c.Abort()
+			return
+		}
+
+		// Format token: "Bearer <token>"
+		tokenParts := strings.Split(authHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("invalid token format"))
+			c.Abort()
+			return
+		}
+
+		// Parse token
+		claims, err := helper.ParseJWT(tokenParts[1])
+		if err != nil {
+			c.JSON(err.Status(), err)
+			c.Abort()
+			return
+		}
+
+		// Cek apakah role adalah "owner"
+		if claims.Role != "owner" {
+			c.JSON(http.StatusForbidden, helper.NewUnathorizedError("access denied"))
+			c.Abort()
+			return
+		}
+
+		// Simpan user di context untuk akses selanjutnya
+		c.Set("user", claims)
+		c.Next()
+	}
+}
+
+func OperatorAuthorization() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		authHeader := c.GetHeader("Authorization")
+		if authHeader == "" {
+			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("missing authorization header"))
+			c.Abort()
+			return
+		}
+
+		// Format token: "Bearer <token>"
+		tokenParts := strings.Split(authHeader, " ")
+		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
+			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("invalid token format"))
+			c.Abort()
+			return
+		}
+
+		// Parse token
+		claims, err := helper.ParseJWT(tokenParts[1])
+		if err != nil {
+			c.JSON(err.Status(), err)
+			c.Abort()
+			return
+		}
+
+		// Cek apakah role adalah "owner"
+		if claims.Role != "cashier" || claims.Role != "manager" {
+			c.JSON(http.StatusForbidden, helper.NewUnathorizedError("access denied"))
+			c.Abort()
+			return
+		}
+
+		// Simpan user di context untuk akses selanjutnya
+		c.Set("user", claims)
+		c.Next()
+	}
+}
