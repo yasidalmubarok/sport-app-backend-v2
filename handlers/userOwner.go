@@ -62,3 +62,44 @@ func (uoh *userOwnerHandler) LoginUserOwner(ctx *gin.Context) {
 	formattedResponse := helper.APIResponse("User owner logged in successfully", http.StatusOK, "success", userOwner)
 	ctx.JSON(http.StatusOK, formattedResponse)
 }
+
+func (uoh *userOwnerHandler) RequestResetPasswordHandler(ctx *gin.Context) {
+	var request models.ResetPasswordRequest
+
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		errors := helper.FormatValidationError(err)
+		errResp := helper.NewUnprocessableEntityError(errors[0])
+		ctx.JSON(errResp.Status(), helper.APIResponse(errResp.Message(), errResp.Status(), "error", nil))
+		return
+	}
+
+	// Panggil service untuk request reset password
+	err := uoh.userOwnerService.RequestResetPassword(ctx, request.Email)
+	if err != nil {
+		ctx.JSON(err.Status(), helper.APIResponse(err.Message(), err.Status(), "error", nil))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, helper.APIResponse("OTP has been sent to your email", http.StatusOK, "success", nil))
+}
+
+// Reset Password (Verifikasi OTP dan Ganti Password)
+func (uoh *userOwnerHandler) ResetPasswordHandler(ctx *gin.Context) {
+	var request models.ResetPasswordWithOTPRequest
+
+	if err := ctx.ShouldBindJSON(&request); err != nil {
+		errors := helper.FormatValidationError(err)
+		errResp := helper.NewUnprocessableEntityError(errors[0])
+		ctx.JSON(errResp.Status(), helper.APIResponse(errResp.Message(), errResp.Status(), "error", nil))
+		return
+	}
+
+	// Panggil service untuk verifikasi OTP dan reset password
+	err := uoh.userOwnerService.ResetPassword(ctx, request.Email, request.OTP, request.NewPassword)
+	if err != nil {
+		ctx.JSON(err.Status(), helper.APIResponse(err.Message(), err.Status(), "error", nil))
+		return
+	}
+
+	ctx.JSON(http.StatusOK, helper.APIResponse("Password has been reset successfully", http.StatusOK, "success", nil))
+}

@@ -2,6 +2,10 @@ package services
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
+	"math/big"
+	"sport-app-backend/config"
 	"sport-app-backend/helper"
 	"sport-app-backend/models"
 	"sport-app-backend/repositories"
@@ -11,6 +15,8 @@ import (
 type UserOwnerService interface {
 	CreateUserOwner(ctx context.Context, userOwner *models.RegisterUserOwnerRequest) (*models.RegisterOwnerResponse, helper.Error)
 	LoginUserOwner(ctx context.Context, userOwner *models.LoginUserOwnerRequest) (*models.LoginOwnerResponse, helper.Error)
+	RequestResetPassword(ctx context.Context, email string) helper.Error
+	ResetPassword(ctx context.Context, email, otp, newPassword string) helper.Error
 }
 
 type userOwnerService struct {
@@ -99,11 +105,66 @@ func (uos *userOwnerService) LoginUserOwner(ctx context.Context, userOwnerPayLoa
 	return uos.mapLoginOwnerWithTokenResponse(owner, token), nil
 }
 
+func (uos *userOwnerService) RequestResetPassword(ctx context.Context, email string) helper.Error {
+	// Cek apakah email terdaftar
+	_, err := uos.userOwnerRepository.GetUserOwnerByEmail(ctx, email)
+	if err != nil {
+		return helper.NewNotFoundError("email not registered")
+	}
+
+	// Generate OTP 4 digit
+	otp, genErr := rand.Int(rand.Reader, big.NewInt(10000)) // Rentang 0000 - 9999
+	if genErr != nil {
+		return helper.NewInternalServerError("failed to generate OTP")
+	}
+
+	// Simpan OTP ke Redis
+	err = uos.userOwnerRepository.SaveResetOTP(ctx, email, fmt.Sprintf("%04d", otp))
+	if err != nil {
+		return err
+	}
+
+	emailBody := fmt.Sprintf("Your OTP is: %04d", otp.Int64())
+	if err := config.SendEmail(email, "Reset Password OTP", emailBody); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (uos *userOwnerService) ResetPassword(ctx context.Context, email, otp, newPassword string) helper.Error {
+	// Ambil OTP dari Redis
+	storedOTP, err := uos.userOwnerRepository.GetResetOTP(ctx, email)
+	if err != nil {
+		return helper.NewUnathorizedError("invalid or expired OTP")
+	}
+
+	// Verifikasi OTP
+	if storedOTP != otp {
+		return helper.NewUnathorizedError("incorrect OTP")
+	}
+
+	// Hash password baru
+	hashedPassword, err := helper.HashPassword(newPassword)
+	if err != nil {
+		return helper.NewInternalServerError("failed to hash password")
+	}
+
+	// Update password di database
+	_, err = uos.userOwnerRepository.UpdateUserOwnerPassword(ctx, email, hashedPassword)
+	if err != nil {
+		return err
+	}
+
+	// Hapus OTP dari Redis setelah berhasil reset password
+	uos.userOwnerRepository.DeleteResetOTP(ctx, email)
+
+	return nil
+}
 func (uos *userOwnerService) mapLoginOwnerWithTokenResponse(userOwner *models.UserOwner, token string) *models.LoginOwnerResponse {
 	return &models.LoginOwnerResponse{
-		Username: userOwner.Username,
+		Username:    userOwner.Username,
 		PhoneNumber: userOwner.PhoneNumber,
-		Token: token,
+		Token:       token,
 	}
 }
 

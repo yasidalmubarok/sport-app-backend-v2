@@ -52,6 +52,15 @@ type LoginOwnerResponse struct {
 	Token string `json:"token"`
 }
 
+type ResetPasswordRequest struct {
+	Email string `json:"email" binding:"required,email"`
+}
+
+type ResetPasswordWithOTPRequest struct {
+	Email       string `json:"email" binding:"required,email"`
+	OTP         string `json:"otp" binding:"required,len=4"`
+	NewPassword string `json:"new_password" binding:"required,gte=6,lte=30"`
+}
 func (uor *RegisterUserOwnerRequest) NewUserOwner() UserOwner {
 	id := uuid.New().String()
 	rawCreatedAt := time.Now().Format(time.RFC3339)

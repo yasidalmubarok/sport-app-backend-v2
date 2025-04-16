@@ -14,10 +14,11 @@ import (
 )
 
 func main() {
+	redis := config.ConnectRedis()
 	db := config.ConnectDB()
 
 	// Dependency Injection
-	userOwnerRepository := repositories.NewUserOwnerRepository(db)
+	userOwnerRepository := repositories.NewUserOwnerRepository(db, redis)
 	userOwnerService := services.NewUserOwnerService(userOwnerRepository)
 	userOwnerHandler := handlers.NewUserOwnerHandler(userOwnerService)
 
@@ -42,6 +43,8 @@ func main() {
 	userOwner := api.Group("/owner")
 	userOwner.POST("/register", userOwnerHandler.CreateUserOwner)
 	userOwner.POST("/session", userOwnerHandler.LoginUserOwner)
+	userOwner.POST("/request-otp", userOwnerHandler.RequestResetPasswordHandler)
+	userOwner.POST("/verify-otp", userOwnerHandler.ResetPasswordHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {
