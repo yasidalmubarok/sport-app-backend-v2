@@ -6,6 +6,7 @@ import (
 	"os"
 	"sport-app-backend/config"
 	"sport-app-backend/handlers"
+	"sport-app-backend/middlewares"
 	"sport-app-backend/repositories"
 	"sport-app-backend/services"
 
@@ -13,11 +14,15 @@ import (
 )
 
 func main() {
+	redis := config.ConnectRedis()
 	db := config.ConnectDB()
 
-	userOwnerRepository := repositories.NewUserOwnerRepository(db)
+	// Dependency Injection
+	userOwnerRepository := repositories.NewUserOwnerRepository(db, redis)
 	userOwnerService := services.NewUserOwnerService(userOwnerRepository)
 	userOwnerHandler := handlers.NewUserOwnerHandler(userOwnerService)
+
+	_ = middlewares.NewAuthService(db, userOwnerRepository)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -38,6 +43,8 @@ func main() {
 	userOwner := api.Group("/owner")
 	userOwner.POST("/register", userOwnerHandler.CreateUserOwner)
 	userOwner.POST("/session", userOwnerHandler.LoginUserOwner)
+	userOwner.POST("/request-otp", userOwnerHandler.RequestResetPasswordHandler)
+	userOwner.POST("/verify-otp", userOwnerHandler.ResetPasswordHandler)
 
 	port := os.Getenv("PORT")
 	if port == "" {

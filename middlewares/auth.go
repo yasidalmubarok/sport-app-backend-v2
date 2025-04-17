@@ -5,12 +5,33 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 
 	"sport-app-backend/helper"
+	"sport-app-backend/repositories"
 )
 
+type AuthService interface {
+	AuthMiddleware() gin.HandlerFunc
+	AdminAuthorization() gin.HandlerFunc
+	OperatorAuthorization() gin.HandlerFunc
+	OwnerAuthorization() gin.HandlerFunc
+}
+
+type authService struct {
+	db                  *gorm.DB
+	userOwnerRepository repositories.UserOwnerRepository
+}
+
+func NewAuthService(db *gorm.DB, userOwnerRepository repositories.UserOwnerRepository) AuthService {
+	return &authService{
+		db:                  db,
+		userOwnerRepository: userOwnerRepository,
+	}
+}
+
 // Middleware untuk memvalidasi token JWT
-func AuthMiddleware() gin.HandlerFunc {
+func (s *authService) AuthMiddleware() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		// Ambil token dari header Authorization
 		authHeader := ctx.GetHeader("Authorization")
@@ -42,7 +63,7 @@ func AuthMiddleware() gin.HandlerFunc {
 	}
 }
 
-func AdminAuthorization() gin.HandlerFunc {
+func (s *authService) AdminAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -80,7 +101,7 @@ func AdminAuthorization() gin.HandlerFunc {
 	}
 }
 
-func OwnerAuthorization() gin.HandlerFunc {
+func (s *authService) OwnerAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -118,7 +139,7 @@ func OwnerAuthorization() gin.HandlerFunc {
 	}
 }
 
-func OperatorAuthorization() gin.HandlerFunc {
+func (s *authService) OperatorAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
@@ -144,7 +165,7 @@ func OperatorAuthorization() gin.HandlerFunc {
 		}
 
 		// Cek apakah role adalah "owner"
-		if claims.Role != "cashier" || claims.Role != "manager" {
+		if claims.Role != "cashier" && claims.Role != "manager" {
 			c.JSON(http.StatusForbidden, helper.NewUnathorizedError("access denied"))
 			c.Abort()
 			return
