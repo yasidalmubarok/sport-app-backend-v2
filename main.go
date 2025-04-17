@@ -22,7 +22,11 @@ func main() {
 	userOwnerService := services.NewUserOwnerService(userOwnerRepository)
 	userOwnerHandler := handlers.NewUserOwnerHandler(userOwnerService)
 
-	_ = middlewares.NewAuthService(db, userOwnerRepository)
+	categoryProductRepository := repositories.NewCategoryProductRepository(db)
+	categoryProductService := services.NewCategoryProductService(categoryProductRepository)
+	categoryProductHandler := handlers.NewCategoryProductHandler(categoryProductService)
+
+	authService := middlewares.NewAuthService(db, userOwnerRepository)
 
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
@@ -45,6 +49,13 @@ func main() {
 	userOwner.POST("/session", userOwnerHandler.LoginUserOwner)
 	userOwner.POST("/request-otp", userOwnerHandler.RequestResetPasswordHandler)
 	userOwner.POST("/verify-otp", userOwnerHandler.ResetPasswordHandler)
+
+	categoryProduct := api.Group("/category-product")
+	categoryProduct.POST("/category", authService.AuthMiddleware(), categoryProductHandler.CreateCategoryProduct)
+	categoryProduct.GET("/category", categoryProductHandler.GetAllCategoryProduct)
+	categoryProduct.GET("/category/:id", categoryProductHandler.GetCategoryProductByID)
+	categoryProduct.PUT("/category/:id", authService.AuthMiddleware(), categoryProductHandler.UpdateCategoryProduct)
+	categoryProduct.DELETE("/category/:id", authService.AuthMiddleware(), categoryProductHandler.DeleteCategoryProduct)
 
 	port := os.Getenv("PORT")
 	if port == "" {
