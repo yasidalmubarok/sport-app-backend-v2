@@ -20,7 +20,7 @@ type UserOwner struct {
 	_ struct{} `gorm:"index:idx_username_phone,unique"`
 }
 
-var UserOwnerRole = "owner"
+var UserOwnerRole = "user"
 
 type RegisterUserOwnerRequest struct {
 	Name        string `json:"name" binding:"required,gte=3,lte=30"`

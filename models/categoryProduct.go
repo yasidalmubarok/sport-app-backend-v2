@@ -7,7 +7,7 @@ import (
 )
 
 type CategoryProduct struct {
-	ID        string    `gorm:"primary_key"`
+	ID        uuid.UUID `gorm:"type:uuid;primary_key"`
 	Name      string    `gorm:"type:varchar(255);not null"`
 	CreatedAt time.Time `gorm:"type:timestamp;default:now()"`
 	UpdatedAt time.Time `gorm:"type:timestamp;default:now()"`
@@ -25,7 +25,7 @@ type CategoryProductResponse struct {
 }
 
 func (cpr *CategoryProductRequest) NewCategoryProduct() CategoryProduct {
-	id := uuid.New().String()
+	id := uuid.New()
 	rawCreatedAt := time.Now().Format(time.RFC3339)
 	created, _ := time.Parse(time.RFC3339, rawCreatedAt)
 	rawUpdatedAt := time.Now().Format(time.RFC3339)

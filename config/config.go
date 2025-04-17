@@ -63,7 +63,7 @@ func ConnectRedis() *redis.Client {
 	// Tes koneksi Redis
 	_, err := RedisClient.Ping(ctx).Result()
 	if err != nil {
-		log.Fatal("Failed to connect to Redis:", err)
+		log.Fatal("Failed connect to Redis:", err)
 	}
 
 	fmt.Println("Connected to Redis!")
