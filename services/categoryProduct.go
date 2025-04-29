@@ -13,6 +13,7 @@ type CategoryProductService interface {
 	GetCategoryProductByID(ctx context.Context, id string) (*models.CategoryProductResponse, helper.Error)
 	UpdateCategoryProduct(ctx context.Context, id string, input *models.CategoryProductRequest) (*models.CategoryProductResponse, helper.Error)
 	DeleteCategoryProduct(ctx context.Context, id string) (*models.CategoryProductResponse, helper.Error)
+	GetCategoryProducts(ctx context.Context, id string) ([]models.Product, helper.Error)
 }
 
 type categoryProductService struct {
@@ -82,9 +83,18 @@ func (cps *categoryProductService) DeleteCategoryProduct(ctx context.Context, id
 	return cps.mapCategoryProductResponse(categoryProduct), nil
 }
 
+func (cps *categoryProductService) GetCategoryProducts(ctx context.Context, id string) ([]models.Product, helper.Error) {
+	products, err := cps.categoryProductRepository.GetCategoryWithProducts(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	return products, nil
+}
+
 func (cps *categoryProductService) mapCategoryProductResponse(categoryProduct *models.CategoryProduct) *models.CategoryProductResponse {
 	return &models.CategoryProductResponse{
-		ID:        categoryProduct.ID.String(),
+		ID:        categoryProduct.ID,
 		Name:      categoryProduct.Name,
 		CreatedAt: categoryProduct.CreatedAt,
 		UpdatedAt: categoryProduct.UpdatedAt,

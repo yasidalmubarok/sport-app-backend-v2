@@ -58,6 +58,7 @@ func main() {
 	categoryProduct.POST("/add", authService.AuthMiddleware(), categoryProductHandler.CreateCategoryProduct)
 	categoryProduct.GET("/fetch", categoryProductHandler.GetAllCategoryProduct)
 	categoryProduct.GET("/fetch/:id", categoryProductHandler.GetCategoryProductByID)
+	categoryProduct.GET("/fetch/:id/products", categoryProductHandler.GetCategoryProducts)
 	categoryProduct.PUT("/put/:id", authService.AuthMiddleware(), categoryProductHandler.UpdateCategoryProduct)
 	categoryProduct.DELETE("/delete/:id", authService.AuthMiddleware(), categoryProductHandler.DeleteCategoryProduct)
 

@@ -101,3 +101,26 @@ func (cph *categoryProductHandler) DeleteCategoryProduct(ctx *gin.Context) {
 	formattedResponse := helper.APIResponse("Category product deleted successfully", http.StatusOK, "success", categoryProduct)
 	ctx.JSON(http.StatusOK, formattedResponse)
 }
+
+func (cph *categoryProductHandler) GetCategoryProducts(ctx *gin.Context) {
+	id := ctx.Param("id")
+
+	products, err := cph.categoryProductService.GetCategoryProducts(ctx, id)
+	if err != nil {
+		response := helper.APIResponse(err.Message(), err.Status(), "error", nil)
+		ctx.JSON(err.Status(), response)
+		return
+	}
+
+	category, err := cph.categoryProductService.GetCategoryProductByID(ctx, id)
+	if err != nil {
+		response := helper.APIResponse(err.Message(), err.Status(), "error", nil)
+		ctx.JSON(err.Status(), response)
+		return
+	}
+
+	formattedProducts := models.CategoryWithProducts(category, products)
+
+	formattedResponse := helper.APIResponse("Category products found successfully", http.StatusOK, "success", formattedProducts)
+	ctx.JSON(http.StatusOK, formattedResponse)
+}
