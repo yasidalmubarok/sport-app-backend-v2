@@ -22,11 +22,11 @@ type Product struct {
 type CreateProductRequest struct {
 	Name      string  `json:"name" binding:"required"`
 	Category  string  `json:"category" binding:"required"`
+	Image     string  `json:"image" binding:"required"`
 	PriceSell float64 `json:"price_sell" binding:"required"`
 	PriceBuy  float64 `json:"price_buy" binding:"required"`
 	Stock     int     `json:"stock" binding:"required"`
 	Status    string  `json:"status" binding:"required,oneof=aktif 'non aktif'"`
-	Image     string  `json:"image" binding:"required"`
 }
 
 type CreateProductResponse struct {
@@ -40,6 +40,34 @@ type CreateProductResponse struct {
 	Image     string    `json:"image"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
+}
+
+
+func (req *CreateProductRequest) ToProduct() *Product {
+	return &Product{
+		Name:      req.Name,
+		Category:  req.Category,
+		PriceSell: req.PriceSell,
+		PriceBuy:  req.PriceBuy,
+		Stock:     req.Stock,
+		Status:    req.Status,
+		Image:     req.Image,
+	}
+}
+
+func (p *Product) ToResponse() *CreateProductResponse {
+	return &CreateProductResponse{
+		ID:        p.ID,
+		Name:      p.Name,
+		Category:  p.Category,
+		PriceSell: p.PriceSell,
+		PriceBuy:  p.PriceBuy,
+		Stock:     p.Stock,
+		Status:    p.Status,
+		Image:     p.Image,
+		CreatedAt: p.CreatedAt,
+		UpdatedAt: p.UpdatedAt,
+	}
 }
 
 func (p *Product) NewProduct() Product {

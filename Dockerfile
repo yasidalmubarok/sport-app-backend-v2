@@ -1,26 +1,12 @@
 # Tahap Build
-FROM golang:1.24.1-alpine AS builder
+FROM golang:1.24-alpine AS builder
 WORKDIR /app
-
-# Copy file go.mod dan go.sum, lalu download dependencies
-COPY go.mod go.sum ./
-RUN go mod download
-
-# Copy seluruh source code
 COPY . .
+RUN CGO_ENABLED=0 go build -o main .
 
-# Build aplikasi
-RUN go build -o main .
-
-# Tahap Deploy (Image lebih ringan)
-FROM alpine:latest
-WORKDIR /root/
-
-# Copy binary dari tahap build
+# Tahap Deploy
+FROM alpine:3.18
+WORKDIR /app
 COPY --from=builder /app/main .
-
-# Set permission agar binary bisa dieksekusi
-RUN chmod +x main
-
-# Jalankan aplikasi
+RUN mkdir -p /app/uploads
 CMD ["./main"]

@@ -24,6 +24,26 @@ type CategoryProductResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
+type CategoryProducts struct {
+	CategoryID string `json:"category_id"`
+	Category   string `json:"category"`
+	Products   []CreateProductResponse
+}
+
+func (cpr *CategoryProduct) CategoryWithProducts(category *CategoryProduct, products []Product) CategoryProducts {
+	var productList []CreateProductResponse
+	for _, product := range products {
+		productList = append(productList, *product.ToResponse())
+	}
+
+	data := CategoryProducts{
+		CategoryID: category.ID.String(),
+		Category:   category.Name,
+		Products:   productList,
+	}
+	return data
+}
+
 func (cpr *CategoryProductRequest) NewCategoryProduct() CategoryProduct {
 	id := uuid.New()
 	rawCreatedAt := time.Now().Format(time.RFC3339)

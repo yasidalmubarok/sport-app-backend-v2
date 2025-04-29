@@ -1,0 +1,42 @@
+services:
+  app:
+    build: .
+    container_name: athletix-app
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./uploads:/app/uploads  # Pastikan path ini sesuai dengan kode Go
+      - .env:/app/.env  # Path disesuaikan
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - GIN_MODE=release
+    networks:
+      - go-network
+
+  db:
+    image: postgres:15-alpine
+    container_name: athletix-db
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: npg_0MTnS7LifqaP
+      POSTGRES_DB: atletix
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d atletix"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - go-network
+
+volumes:
+  postgres_data:
+
+networks:
+  go-network:
+    driver: bridge

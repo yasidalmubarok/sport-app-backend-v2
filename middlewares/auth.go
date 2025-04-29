@@ -67,31 +67,31 @@ func (s *authService) AdminAuthorization() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("missing authorization header"))
-			c.Abort()
+			response := helper.NewUnauthenticatedError("missing authorization header")
+			c.JSON(http.StatusUnauthorized, response)
 			return
 		}
 
 		// Format token: "Bearer <token>"
 		tokenParts := strings.Split(authHeader, " ")
 		if len(tokenParts) != 2 || tokenParts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, helper.NewUnauthenticatedError("invalid token format"))
-			c.Abort()
+			response := helper.NewUnauthenticatedError("invalid token format")
+			c.JSON(http.StatusUnauthorized, response)
 			return
 		}
 
 		// Parse token
 		claims, err := helper.ParseJWT(tokenParts[1])
 		if err != nil {
-			c.JSON(err.Status(), err)
-			c.Abort()
+			response := helper.NewUnauthenticatedError("invalid or expired token")
+			c.JSON(http.StatusUnauthorized, response)
 			return
 		}
 
 		// Cek apakah role adalah "admin"
 		if claims.Role != "admin" {
-			c.JSON(http.StatusForbidden, helper.NewUnathorizedError("access denied"))
-			c.Abort()
+			response := helper.NewUnauthenticatedError("unauthorized access")
+			c.JSON(http.StatusForbidden, response)
 			return
 		}
 
