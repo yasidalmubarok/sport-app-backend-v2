@@ -30,6 +30,10 @@ func main() {
 	productService := services.NewProductService(productRepository)
 	productHandler := handlers.NewProductHandler(productService)
 
+	categoryFieldRepository := repositories.NewCategoryFieldRepository(db)
+	categoryFieldService := services.NewCategoryFieldService(categoryFieldRepository)
+	categoryFieldHandler := handlers.NewCategoryFieldHandler(categoryFieldService)
+
 	authService := middlewares.NewAuthService(db, userOwnerRepository)
 
 	gin.SetMode(gin.ReleaseMode)
@@ -68,6 +72,13 @@ func main() {
 	product.GET("/fetch/:id", productHandler.GetProductByID)
 	product.PATCH("/patch/:id", authService.AuthMiddleware(), productHandler.UpdateProduct)
 	product.DELETE("/delete/:id", authService.AuthMiddleware(), productHandler.DeleteProduct)
+
+	categoryField := api.Group("/category-field")
+	categoryField.POST("/add", authService.AuthMiddleware(), categoryFieldHandler.CreateCategoryField)
+	categoryField.GET("/fetch", categoryFieldHandler.GetAllCategoryField)
+	categoryField.GET("/fetch/:id", categoryFieldHandler.GetCategoryFieldByID)
+	categoryField.PUT("/put/:id", authService.AuthMiddleware(), categoryFieldHandler.UpdateCategoryField)
+	categoryField.DELETE("/delete/:id", authService.AuthMiddleware(), categoryFieldHandler.DeleteCategoryField)
 
 	port := os.Getenv("PORT")
 	if port == "" {
