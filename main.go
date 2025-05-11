@@ -26,6 +26,14 @@ func main() {
 	categoryProductService := services.NewCategoryProductService(categoryProductRepository)
 	categoryProductHandler := handlers.NewCategoryProductHandler(categoryProductService)
 
+	productRepository := repositories.NewProductRepository(db)
+	productService := services.NewProductService(productRepository)
+	productHandler := handlers.NewProductHandler(productService)
+
+	categoryFieldRepository := repositories.NewCategoryFieldRepository(db)
+	categoryFieldService := services.NewCategoryFieldService(categoryFieldRepository)
+	categoryFieldHandler := handlers.NewCategoryFieldHandler(categoryFieldService)
+
 	authService := middlewares.NewAuthService(db, userOwnerRepository)
 
 	gin.SetMode(gin.ReleaseMode)
@@ -51,11 +59,26 @@ func main() {
 	userOwner.POST("/verify-otp", userOwnerHandler.ResetPasswordHandler)
 
 	categoryProduct := api.Group("/category-product")
-	categoryProduct.POST("/category", authService.AuthMiddleware(), categoryProductHandler.CreateCategoryProduct)
-	categoryProduct.GET("/category", categoryProductHandler.GetAllCategoryProduct)
-	categoryProduct.GET("/category/:id", categoryProductHandler.GetCategoryProductByID)
-	categoryProduct.PUT("/category/:id", authService.AuthMiddleware(), categoryProductHandler.UpdateCategoryProduct)
-	categoryProduct.DELETE("/category/:id", authService.AuthMiddleware(), categoryProductHandler.DeleteCategoryProduct)
+	categoryProduct.POST("/add", authService.AuthMiddleware(), categoryProductHandler.CreateCategoryProduct)
+	categoryProduct.GET("/fetch", categoryProductHandler.GetAllCategoryProduct)
+	categoryProduct.GET("/fetch/:id", categoryProductHandler.GetCategoryProductByID)
+	categoryProduct.GET("/fetch/:id/products", categoryProductHandler.GetCategoryProducts)
+	categoryProduct.PUT("/put/:id", authService.AuthMiddleware(), categoryProductHandler.UpdateCategoryProduct)
+	categoryProduct.DELETE("/delete/:id", authService.AuthMiddleware(), categoryProductHandler.DeleteCategoryProduct)
+
+	product := api.Group("/products")
+	product.POST("/add", authService.AuthMiddleware(), productHandler.CreateProduct)
+	product.GET("/fetch", productHandler.GetProducts)
+	product.GET("/fetch/:id", productHandler.GetProductByID)
+	product.PATCH("/patch/:id", authService.AuthMiddleware(), productHandler.UpdateProduct)
+	product.DELETE("/delete/:id", authService.AuthMiddleware(), productHandler.DeleteProduct)
+
+	categoryField := api.Group("/category-field")
+	categoryField.POST("/add", authService.AuthMiddleware(), categoryFieldHandler.CreateCategoryField)
+	categoryField.GET("/fetch", categoryFieldHandler.GetAllCategoryField)
+	categoryField.GET("/fetch/:id", categoryFieldHandler.GetCategoryFieldByID)
+	categoryField.PUT("/put/:id", authService.AuthMiddleware(), categoryFieldHandler.UpdateCategoryField)
+	categoryField.DELETE("/delete/:id", authService.AuthMiddleware(), categoryFieldHandler.DeleteCategoryField)
 
 	port := os.Getenv("PORT")
 	if port == "" {

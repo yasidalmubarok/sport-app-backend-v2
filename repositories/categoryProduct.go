@@ -16,6 +16,7 @@ type CategoryProductRepository interface {
 	GetCategoryProductByID(ctx context.Context, id string) (*models.CategoryProduct, helper.Error)
 	UpdateCategoryProduct(ctx context.Context, id string, categoryProduct *models.CategoryProduct) (*models.CategoryProduct, helper.Error)
 	DeleteCategoryProduct(ctx context.Context, id string) (*models.CategoryProduct, helper.Error)
+	GetCategoryWithProducts(ctx context.Context, id string) ([]models.Product, helper.Error)
 }
 
 type categoryProductRepository struct {
@@ -96,4 +97,13 @@ func (cpr *categoryProductRepository) DeleteCategoryProduct(ctx context.Context,
 	}
 
 	return &categoryProduct, nil
+}
+
+func (cpr *categoryProductRepository) GetCategoryWithProducts(ctx context.Context, id string) ([]models.Product, helper.Error) {
+	var products []models.Product
+	err := cpr.db.WithContext(ctx).Where("category = ?", id).Find(&products).Error
+	if err != nil {
+		return nil, helper.NewInternalServerError("Something went wrong")
+	}
+	return products, nil
 }
