@@ -29,13 +29,10 @@ func LoadEnv() {
 
 func ConnectDB() *gorm.DB {
 	LoadEnv()
-	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=require",
-		os.Getenv("DB_HOST"),
-		os.Getenv("DB_USER"),
-		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_NAME"),
-		os.Getenv("DB_PORT"),
-	)
+	dsn := os.Getenv("DB_URL")
+	if dsn == "" {
+		log.Fatal("DB_URL environment variable is not set")
+	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
@@ -45,9 +42,8 @@ func ConnectDB() *gorm.DB {
 	return db
 }
 
-// ConnectRedis menghubungkan aplikasi ke Redis
 func ConnectRedis() *redis.Client {
-	LoadEnv() // Memuat variabel lingkungan dari .env
+	LoadEnv() 
 
 	addr := fmt.Sprintf("%s:%s",
 		os.Getenv("REDIS_HOST"),
@@ -56,8 +52,8 @@ func ConnectRedis() *redis.Client {
 
 	RedisClient = redis.NewClient(&redis.Options{
 		Addr:     addr,
-		Password: os.Getenv("REDIS_PASSWORD"), // Bisa kosong jika tidak pakai password
-		DB:       0,                           // Default database Redis
+		Password: "",
+		DB:       0,                          
 	})
 
 	// Tes koneksi Redis

@@ -1,3 +1,5 @@
+version: '3.8'
+
 services:
   app:
     build: .
@@ -6,13 +8,17 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      - ./uploads:/app/uploads  # Pastikan path ini sesuai dengan kode Go
-      - .env:/app/.env  # Path disesuaikan
+      - ./uploads:/app/uploads
+      - .env:/app/.env
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - GIN_MODE=release
+      - REDIS_HOST=redis  
+      - REDIS_PORT=6379
     networks:
       - go-network
 
@@ -34,8 +40,25 @@ services:
     networks:
       - go-network
 
+  redis:
+    image: redis:7-alpine
+    container_name: athletix-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - go-network
+
 volumes:
   postgres_data:
+  redis_data: 
 
 networks:
   go-network:
